@@ -15,27 +15,21 @@ int main(int argc, char const *argv[]){
 
     ssize_t wret;
     std::string bufStr;
-
     char const *portname = "/dev/ttyACM0";
-
+    char buf [230];
+    int n=0;
     int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
+
     if (fd < 0){ 
         std::cout << "Error abriendo puerto " << std::endl;
         return -1;
     }
 
-    char buf [230];
-
     set_interface_attribs (fd, B115200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
     set_blocking (fd, 0);                // set no blocking
 
-    wret=write (fd, "\r\r",2);           // send 2 character greeting
-
-
+    wret=write (fd, "\r\r",2);           // send 2 character greetin
     usleep (300000);
-
-    int n=0;
-
 
     while(n<100){
         n = read (fd, buf, sizeof buf);
@@ -48,7 +42,6 @@ int main(int argc, char const *argv[]){
         if (bufStr == "\n")
         {
             std::cout << "ENTER"<< std::endl; 
-
         }
         std::cout << buf[i]; 
     }
