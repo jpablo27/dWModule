@@ -4,6 +4,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <sstream>
 
 
 int set_interface_attribs (int fd, int speed, int parity);
@@ -13,6 +15,10 @@ void set_blocking (int fd, int should_block);
 
 int main(int argc, char const *argv[]){
 
+    bool in=false;
+    bool out=false;
+
+    std::ostringstream oss;
     ssize_t wret;
     std::string bufStr;
     char const *portname = "/dev/ttyACM0";
@@ -36,62 +42,47 @@ int main(int argc, char const *argv[]){
         usleep (300000);
     }
 
-    for (int i = 0; i < n; ++i)
-    {
-        bufStr = buf[i];
-        if (bufStr == "\n")
-        {
-            std::cout << "ENTER"<< std::endl; 
+
+
+    wret=write(fd,"la\r",3);
+    usleep (300000);
+
+
+    while(true){
+        n=0;
+        while(n<5){
+            n = read (fd, buf, sizeof buf);
+            usleep (30000);
         }
-        std::cout << buf[i]; 
+
+        oss.str("");
+        oss.clear();
+
+        for (int i = 0; i < n; ++i)
+        {
+            bufStr = buf[i];
+            if (bufStr == "["){
+                in=true;
+                continue;
+            } 
+            if (bufStr == " "){
+                in=false ;
+                break;
+            }
+            if(in) oss << bufStr;
+        }  
+
+        float outInt=std::stof(oss.str());
+
+        std::cout << outInt << std::endl; //ESTO ES LO QUE HAY QUE PUBLICAR EN ROS <<<<------
+        wret=write(fd,"\r",1);
+        usleep (30000);
+
     }
 
-
-    /*
-    int n = read (fd, buf, sizeof buf); 
-
-
-    usleep (100000);
-
-*/
-
-    //usleep (100000);             // sleep enough to transmit the 7 plus
-
-
-   // 
-
-   // usleep (100000);             // sleep enough to transmit the 7 plus
-
-/*    wret=write(fd,"la",2); 
-                                         // receive 25:  approx 100 uS per char transmit
-
-    usleep (100000);
-
-    wret=write(fd,"\n",1); 
-                                         // receive 25:  approx 100 uS per char transmit
-
-    usleep (100000);*/
     
 
-/*
 
-
-    n = read (fd, buf, sizeof buf); 
-
-    usleep (100000);
-
-    for (int i = 0; i < n; ++i)
-    {
-        if (false)
-        {
-            std::cout << "ENTER"<< std::endl; 
-
-        }
-        std::cout <<i<< ": "<<  buf[i] << std::endl; 
-
-    }
-
-*/
     return 0;
 }
 
