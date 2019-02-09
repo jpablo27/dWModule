@@ -11,20 +11,37 @@
 int set_interface_attribs (int fd, int speed, int parity);
 void set_blocking (int fd, int should_block);
 
+void pub_id(std::string &st){
+
+    std::cout << "ID: ";
+    std::cout << st << "  ";
+}
+
+void pub_val(float &val){
+
+    std::cout << "VL: ";
+    std::cout << val << "  ";
+}
 
 
 int main(int argc, char const *argv[]){
 
     bool in=false;
+    bool stb=false;
     bool out=false;
+    bool eol=false;
 
-    std::ostringstream oss;
+    std::ostringstream oss,idss;
     ssize_t wret;
     std::string bufStr;
+    std::vector<std::string> idStr;
+    std::vector<float> val_v;
     char const *portname = "/dev/ttyACM0";
     char buf [230];
     int n=0;
     int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
+    int id_cnt=0;
+    int tag_cnt=0;
 
     if (fd < 0){ 
         std::cout << "Error abriendo puerto " << std::endl;
@@ -35,19 +52,116 @@ int main(int argc, char const *argv[]){
     set_blocking (fd, 0);                // set no blocking
 
     wret=write (fd, "\r\r",2);           // send 2 character greetin
-    usleep (300000);
-
-    while(n<100){
+    usleep (500000);
+    n = read (fd, buf, sizeof buf);
+    usleep (500000);
+    wret=write (fd, "les\r",4);           // send 2 character greetin
+    n = read (fd, buf, sizeof buf);
+    usleep (500000);
+    n = read (fd, buf, sizeof buf);
+    usleep (500000);
+    while(true){
         n = read (fd, buf, sizeof buf);
-        usleep (300000);
+        for (int i = 0; i < n; ++i)
+        {   
+            
+            bufStr=buf[i];
+
+
+            if((bufStr=="\n")&&!eol){
+               eol = true;
+               continue; 
+            } 
+
+
+            if(eol){//Esta bandera es para sincronizar, se leerá después del primer 'enter'
+
+            //std::cout <<bufStr ;
+
+
+                if(bufStr=="="&&!in){
+                    oss.str("");
+                    oss.clear();
+                    idss.str("");
+                    idss.clear();
+                    in = true;
+                   
+                    continue;
+                }else if(bufStr==" "&&in){
+                    val_v.push_back(std::stof(oss.str()));
+                    in = false;
+                    id_cnt=0;
+                    continue;
+                    //stb=false;
+                    //float outInt=std::stof(oss.str());
+                    //std::cout <<"WHAT1:"<< outInt<<std::endl ;
+                }else if(bufStr=="\r"){
+                    std::cout <<"A---------------" << std::endl;
+                    for (int i = 0; i < idStr.size(); ++i)
+                    {
+                        pub_id(idStr[i]);
+                    }
+                    std::cout << std::endl;
+                    for (int i = 0; i < idStr.size(); ++i)
+                    {
+                        pub_val(val_v[i]);
+                    }
+                    std::cout << std::endl;
+                    std::cout <<"B---------------" << std::endl;
+                    std::cout << std::endl;
+                    idStr.clear();
+                    val_v.clear();
+                    continue;
+                    //float outInt=std::stof(oss.str());
+                    //std::cout <<"WHAT:"<< outInt<<std::endl ;
+                }else if(bufStr=="\n"){
+                    continue;
+                }else{
+
+                    if(in) oss<<bufStr;
+
+                    if ((id_cnt<4)&&(!stb))
+                    {
+                        idss<<bufStr;                       
+                        id_cnt++;
+                    }else if(id_cnt==4){
+                        idStr.push_back( idss.str());
+                        id_cnt++;
+                    }
+
+                }
+
+
+
+
+
+                
+
+
+            }
+
+
+        }
+
+        
+
+
+
+        //std::cout << buf[0] << std::endl;
+        
+
+/*
+        for (int i = 0; i < n; ++i)
+        {
+            
+            bufStr = buf[i];
+            std::cout << "K" << bufStr << std::endl;
+        }*/
     }
 
+    
 
-
-    wret=write(fd,"la\r",3);
-    usleep (300000);
-
-
+/*
     while(true){
         n=0;
         while(n<5){
@@ -61,6 +175,8 @@ int main(int argc, char const *argv[]){
         for (int i = 0; i < n; ++i)
         {
             bufStr = buf[i];
+            std::cout << "HEY" << bufStr << std::endl;
+
             if (bufStr == "["){
                 in=true;
                 continue;
@@ -70,7 +186,8 @@ int main(int argc, char const *argv[]){
                 break;
             }
             if(in) oss << bufStr;
-        }  
+        }
+
 
         float outInt=std::stof(oss.str());
 
@@ -81,7 +198,7 @@ int main(int argc, char const *argv[]){
     }
 
     
-
+*/
 
     return 0;
 }
@@ -106,6 +223,7 @@ int set_interface_attribs (int fd, int speed, int parity){
     tty.c_iflag &= ~IGNBRK;         // disable break processing
     tty.c_lflag = 0;                // no signaling chars, no echo,
                                     // no canonical processing
+    tty.c_lflag &=~(ICANON);
     tty.c_oflag = 0;                // no remapping, no delays
     tty.c_cc[VMIN]  = 0;            // read doesn't block
     tty.c_cc[VTIME] = 10;            // 0.5 seconds read timeout
