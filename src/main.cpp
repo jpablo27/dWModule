@@ -6,25 +6,24 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
-
+#include <map>
 
 int set_interface_attribs (int fd, int speed, int parity);
 void set_blocking (int fd, int should_block);
 
-void pub_id(std::string &st){
-
-    std::cout << "ID: ";
-    std::cout << st << "  ";
-}
-
-void pub_val(float &val){
-
-    std::cout << "VL: ";
-    std::cout << val << "  ";
-}
-
 
 int main(int argc, char const *argv[]){
+
+    //MAPA----DATOS PARA ORDENAR LOS VALORES DE DISTANCIAS EN LAS VARIABLES CORRECTAS
+    int d1,d2,d3,d4;
+
+    std::map<std::string , int*> mapa;
+    // hay que poner los IDs correctos
+    mapa["HT54"]= &d1;
+    mapa["JG54"]= &d2;
+    mapa["PTM4"]= &d3;
+    mapa["DCI4"]= &d4;
+    //MAPA----------------------------------------------------------------------------
 
     bool in=false;
     bool stb=false;
@@ -92,28 +91,19 @@ int main(int argc, char const *argv[]){
                     in = false;
                     id_cnt=0;
                     continue;
-                    //stb=false;
-                    //float outInt=std::stof(oss.str());
-                    //std::cout <<"WHAT1:"<< outInt<<std::endl ;
+
                 }else if(bufStr=="\r"){
                     std::cout <<"A---------------" << std::endl;
                     for (int i = 0; i < idStr.size(); ++i)
                     {
-                        pub_id(idStr[i]);
+                        *mapa[idStr[i]]=val_v[i]; //Aqui se le asigna su valor a d1,d2,d3,d4 según corresponde.
                     }
-                    std::cout << std::endl;
-                    for (int i = 0; i < idStr.size(); ++i)
-                    {
-                        pub_val(val_v[i]);
-                    }
-                    std::cout << std::endl;
                     std::cout <<"B---------------" << std::endl;
-                    std::cout << std::endl;
+                    std::cout <<std::endl;
                     idStr.clear();
                     val_v.clear();
                     continue;
-                    //float outInt=std::stof(oss.str());
-                    //std::cout <<"WHAT:"<< outInt<<std::endl ;
+
                 }else if(bufStr=="\n"){
                     continue;
                 }else{
@@ -128,77 +118,10 @@ int main(int argc, char const *argv[]){
                         idStr.push_back( idss.str());
                         id_cnt++;
                     }
-
                 }
-
-
-
-
-
-                
-
-
             }
-
-
-        }
-
-        
-
-
-
-        //std::cout << buf[0] << std::endl;
-        
-
-/*
-        for (int i = 0; i < n; ++i)
-        {
-            
-            bufStr = buf[i];
-            std::cout << "K" << bufStr << std::endl;
-        }*/
+        }        
     }
-
-    
-
-/*
-    while(true){
-        n=0;
-        while(n<5){
-            n = read (fd, buf, sizeof buf);
-            usleep (30000);
-        }
-
-        oss.str("");
-        oss.clear();
-
-        for (int i = 0; i < n; ++i)
-        {
-            bufStr = buf[i];
-            std::cout << "HEY" << bufStr << std::endl;
-
-            if (bufStr == "["){
-                in=true;
-                continue;
-            } 
-            if (bufStr == " "){
-                in=false ;
-                break;
-            }
-            if(in) oss << bufStr;
-        }
-
-
-        float outInt=std::stof(oss.str());
-
-        std::cout << outInt << std::endl; //ESTO ES LO QUE HAY QUE PUBLICAR EN ROS <<<<------
-        wret=write(fd,"\r",1);
-        usleep (30000);
-
-    }
-
-    
-*/
 
     return 0;
 }
