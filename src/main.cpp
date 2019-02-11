@@ -8,16 +8,25 @@
 #include <sstream>
 #include <map>
 
+#include "ros/ros.h"
+#include "dwmodule/distances.h"
+
 int set_interface_attribs (int fd, int speed, int parity);
 void set_blocking (int fd, int should_block);
 
 
-int main(int argc, char const *argv[]){
+int main(int argc, char *argv[]){
 
+    dwmodule::distances T1_ds;
+
+    ros::init(argc, argv, "T1_Distances");
+    ros::NodeHandle nh;
+    ros::Publisher chatter_pub = nh.advertise<dwmodule::distances>("chatter", 1);
+    ros::Rate loop_rate(60);
     //MAPA----DATOS PARA ORDENAR LOS VALORES DE DISTANCIAS EN LAS VARIABLES CORRECTAS
-    int d1,d2,d3,d4;
+    float d1,d2,d3,d4;
 
-    std::map<std::string , int*> mapa;
+    std::map<std::string , float*> mapa;
     // hay que poner los IDs correctos
     mapa["HT54"]= &d1;
     mapa["JG54"]= &d2;
@@ -59,7 +68,7 @@ int main(int argc, char const *argv[]){
     usleep (500000);
     n = read (fd, buf, sizeof buf);
     usleep (500000);
-    while(true){
+    while(ros::ok()){
         n = read (fd, buf, sizeof buf);
         for (int i = 0; i < n; ++i)
         {   
@@ -93,12 +102,16 @@ int main(int argc, char const *argv[]){
                     continue;
 
                 }else if(bufStr=="\r"){
-                    std::cout <<"A---------------" << std::endl;
                     for (int i = 0; i < idStr.size(); ++i)
                     {
                         *mapa[idStr[i]]=val_v[i]; //Aqui se le asigna su valor a d1,d2,d3,d4 según corresponde.
+                        T1_ds.d1=d1;
+                        T1_ds.d2=d2;
+                        T1_ds.d3=d3;
+                        T1_ds.d4=d4;
                     }
-                    std::cout <<"B---------------" << std::endl;
+                    ros::spinOnce();
+                    loop_rate.sleep();
                     std::cout <<std::endl;
                     idStr.clear();
                     val_v.clear();
