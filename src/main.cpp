@@ -110,6 +110,7 @@ int main(int argc, char *argv[]){
                         T1_ds.d3=d3;
                         T1_ds.d4=d4;
                     }
+                    chatter_pub.publish(T1_ds);
                     ros::spinOnce();
                     loop_rate.sleep();
                     std::cout <<std::endl;
