@@ -24,14 +24,14 @@ int main(int argc, char *argv[]){
     ros::Publisher chatter_pub = nh.advertise<dwmodule::distances>("chatter", 1);
     ros::Rate loop_rate(60);
     //MAPA----DATOS PARA ORDENAR LOS VALORES DE DISTANCIAS EN LAS VARIABLES CORRECTAS
-    float d1,d2,d3,d4;
+    float d1=0,d2=0,d3=0,d4=0;
 
     std::map<std::string , float*> mapa;
     // hay que poner los IDs correctos
-    mapa["HT54"]= &d1;
-    mapa["JG54"]= &d2;
-    mapa["PTM4"]= &d3;
-    mapa["DCI4"]= &d4;
+    mapa["490B"]= &d1;
+    mapa["410F"]= &d2;
+    mapa["C82B"]= &d3;
+    mapa["400D"]= &d4;
     //MAPA----------------------------------------------------------------------------
 
     bool in=false;
@@ -102,18 +102,26 @@ int main(int argc, char *argv[]){
                     continue;
 
                 }else if(bufStr=="\r"){
+
+
                     for (int i = 0; i < idStr.size(); ++i)
+
                     {
-                        *mapa[idStr[i]]=val_v[i]; //Aqui se le asigna su valor a d1,d2,d3,d4 según corresponde.
-                        T1_ds.d1=d1;
-                        T1_ds.d2=d2;
-                        T1_ds.d3=d3;
-                        T1_ds.d4=d4;
+                        if(idStr[i]=="490B" || idStr[i]=="410F" || idStr[i]=="C82B" || idStr[i]=="400D"){
+                            *mapa[idStr[i]]=val_v[i]; //Aqui se le asigna su valor a d1,d2,d3,d4 según corresponde.
+                            T1_ds.d1=d1;
+                            T1_ds.d2=d2;
+                            T1_ds.d3=d3;
+                            T1_ds.d4=d4;
+                        }else{
+                            std::cout << idStr[i] << std::endl;
+                        }
+
                     }
                     chatter_pub.publish(T1_ds);
                     ros::spinOnce();
                     loop_rate.sleep();
-                    std::cout <<std::endl;
+                    //std::cout <<std::endl;
                     idStr.clear();
                     val_v.clear();
                     continue;
