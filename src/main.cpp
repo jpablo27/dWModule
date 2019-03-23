@@ -11,11 +11,53 @@
 #include "ros/ros.h"
 #include "dwmodule/distances.h"
 
+#include <signal.h>
+#include <atomic>
+std::atomic<bool> quit(false);    // signal flag
+
+void got_signal(int)
+{
+    quit.store(true);
+}
+
 int set_interface_attribs (int fd, int speed, int parity);
 void set_blocking (int fd, int should_block);
 
 
+class dummy
+{
+public:
+    dummy(int & a){
+            //std::cout << "fd" << std::endl;
+
+        g =a;
+    }
+    ~dummy(){
+           //std::cout <<"hi"<< g << std::endl;
+
+        wret=write (g, "les\r",4);           // send 2 character greetin
+        n = read (g, buf, sizeof buf);
+        usleep (500000);
+        close(g);
+    }
+
+private:
+    int g,n;
+    ssize_t wret;
+    char buf [230];
+};
+
+
 int main(int argc, char *argv[]){
+
+
+    // Esto es para que al terminar el programa, el modulo deje de mandar cosas
+    struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
+
 
     dwmodule::distances T1_ds;
 
@@ -50,7 +92,7 @@ int main(int argc, char *argv[]){
     int fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
     int id_cnt=0;
     int tag_cnt=0;
-
+    dummy obdummy(fd);
     if (fd < 0){ 
         std::cout << "Error abriendo puerto " << std::endl;
         return -1;
@@ -69,6 +111,7 @@ int main(int argc, char *argv[]){
     n = read (fd, buf, sizeof buf);
     usleep (500000);
     while(ros::ok()){
+        if(quit.load()) break;
         n = read (fd, buf, sizeof buf);
         for (int i = 0; i < n; ++i)
         {   
