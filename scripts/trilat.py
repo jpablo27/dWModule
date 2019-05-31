@@ -6,6 +6,7 @@ from numpy import linalg as LA
 import rospy
 from std_msgs.msg import String
 from dwmodule.msg import distances
+from geometry_msgs.msg import Point
 
 D=np.array([1,1,1,1])
 first = False
@@ -35,18 +36,18 @@ def Trilateration(P, D, W):
 		print('Number of reference point and distances are different')
 		return 0,0
 	
-	a = np.empty((0,4))
+	A = np.empty((0,4))
 	b = np.empty((0,1))
 	for i1 in xrange(0,npl):
 		x = P.item(0,i1)
 		y = P.item(1,i1)
 		z = P.item(2,i1)
 		s = D.item(i1)
-		a = np.concatenate((a,[[1,-2*x,-2*y,-2*z]]),axis=0)
+		A = np.concatenate((A,[[1,-2*x,-2*y,-2*z]]),axis=0)
 		b = np.concatenate((b,[[s**2-x**2-y**2-z**2]]),axis=0)
 
 	if npl is 3:
-		Xp = np.matmul(LA.pinv(a),b)
+		Xp = np.matmul(LA.pinv(A),b)
 		xp = Xp[1:4,:]
 		rank, Z = null(A)
 		z = Z[1:4,:]
@@ -79,17 +80,19 @@ def main():
 
 	global D, first
 
+	out = Point()
+
 	rospy.init_node('trilat',anonymous=False)
 	rospy.Subscriber("topicdwm",distances,callback)
-
+	pub = rospy.Publisher('trilatpos', Point, queue_size=1)
 
 	P0 = np.array ([[0], [0], [0.98]])
-	P1 =np.array([[6.62], [-1.88], [2.21]])
-	P2 =np.array([[12.4],  [2.04] , [0.81]])
-	P3 =np.array([[5.62],  [5.82] , [1.80]])
+	P1 = np.array([[6.62], [-1.88], [2.21]])
+	P2 = np.array([[12.4],  [2.04] , [0.81]])
+	P3 = np.array([[5.62],  [5.82] , [1.80]])
 
-	P=np.concatenate((P0,P1,P2,P3),axis = 0)
-
+	P=np.concatenate((P0,P1,P2,P3),axis = 1)
+	print P
 	#Posicion real del tag
 	N=np.array([[7.5], [1.5], [0.93]])
 
@@ -105,7 +108,10 @@ def main():
 		if first:
 			W = np.diag(np.ones(len(D)))
 			N1, N2 = Trilateration(P,D,W)
-			print "hey"
+			out.x = N1.item(0)
+			out.y = N1.item(1)
+			out.z = N1.item(2)
+			pub.publish(out)
 		rate.sleep()
 
 
