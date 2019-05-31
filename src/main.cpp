@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
 
     ros::init(argc, argv, "T1_Distances");
     ros::NodeHandle nh;
-    ros::Publisher chatter_pub = nh.advertise<dwmodule::distances>("chatter", 1);
+    ros::Publisher chatter_pub = nh.advertise<dwmodule::distances>("topicdwm", 1);
     ros::Rate loop_rate(60);
     //MAPA----DATOS PARA ORDENAR LOS VALORES DE DISTANCIAS EN LAS VARIABLES CORRECTAS
     float d1=0,d2=0,d3=0,d4=0;
